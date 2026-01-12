@@ -12,22 +12,18 @@ const Portfolio = () => {
   
   const finalPortfolioData = portfolioData;
 
-  // Fonction pour corriger les URLs des vidéos Google Drive
   const getEmbedUrl = (url: string) => {
     if (!url) return url;
     
-    // Si c'est déjà une URL d'embed, on la retourne telle quelle
     if (url.includes('/preview') || url.includes('player.vimeo.com') || url.includes('youtube.com/embed')) {
       return url;
     }
     
-    // Extraire l'ID du fichier Google Drive
     const fileIdMatch = url.match(/\/d\/([^/]+)/);
     if (fileIdMatch && fileIdMatch[1]) {
       return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
     }
     
-    // Si l'URL contient "id="
     const idMatch = url.match(/[?&]id=([^&]+)/);
     if (idMatch && idMatch[1]) {
       return `https://drive.google.com/file/d/${idMatch[1]}/preview`;
@@ -218,6 +214,7 @@ const Portfolio = () => {
                             loading="lazy"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
+                              console.error('❌ Erreur thumbnail:', project.thumbnail);
                               target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzllYTNhOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==";
                             }}
                           />
@@ -284,6 +281,10 @@ const Portfolio = () => {
                             alt={project.title}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzllYTNhOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==";
+                            }}
                           />
                           <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                             {project.medias?.length || 1}
@@ -345,6 +346,10 @@ const Portfolio = () => {
                             alt={project.title}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzllYTNhOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==";
+                            }}
                           />
                           <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                             {project.medias?.length || 1}
@@ -379,7 +384,7 @@ const Portfolio = () => {
           ))}
         </div>
 
-        {/* Modal avec centrage CORRIGÉ et RESPONSIVE */}
+        {/* Modal RESPONSIVE ET CORRIGÉE */}
         <Dialog open={!!selectedProject} onOpenChange={closeProject}>
           <DialogContent className="max-w-7xl max-h-[95vh] w-[95vw] p-0 overflow-hidden bg-black border-none">
             {selectedProject && (
@@ -399,24 +404,39 @@ const Portfolio = () => {
                 </div>
 
                 <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                  {/* Zone média principale - CENTRAGE CORRIGÉ ET RESPONSIVE */}
-                  <div className="flex-1 relative bg-black min-h-0">
+                  {/* Zone média principale - CORRECTION RESPONSIVE */}
+                  <div className="flex-1 relative bg-black min-h-0 overflow-hidden">
                     {selectedProject.medias && selectedProject.medias[selectedMediaIndex] && (
                       <>
                         {selectedProject.medias[selectedMediaIndex].type === 'video' ? (
-                          <iframe
-                            src={getEmbedUrl(selectedProject.medias[selectedMediaIndex].src)}
-                            className="absolute inset-0 w-full h-full"
-                            allow="autoplay; fullscreen"
-                            title={selectedProject.medias[selectedMediaIndex].title}
-                            style={{ border: 'none' }}
-                          />
+                          <div className="absolute inset-0 flex items-center justify-center p-2 md:p-4">
+                            <iframe
+                              src={getEmbedUrl(selectedProject.medias[selectedMediaIndex].src)}
+                              className="w-full h-full"
+                              style={{ 
+                                border: 'none',
+                                maxWidth: '100%',
+                                maxHeight: '100%'
+                              }}
+                              allow="autoplay; fullscreen"
+                              title={selectedProject.medias[selectedMediaIndex].title}
+                            />
+                          </div>
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8">
+                          <div className="absolute inset-0 flex items-center justify-center p-2 md:p-4">
                             <img
                               src={selectedProject.medias[selectedMediaIndex].src}
                               alt={selectedProject.medias[selectedMediaIndex].title}
                               className="max-w-full max-h-full w-auto h-auto object-contain"
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%'
+                              }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                console.error('❌ Erreur image modal:', selectedProject.medias[selectedMediaIndex].src);
+                                target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==";
+                              }}
                             />
                           </div>
                         )}
@@ -427,14 +447,14 @@ const Portfolio = () => {
                             <button
                               onClick={prevMedia}
                               disabled={selectedMediaIndex === 0}
-                              className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white p-2 md:p-4 rounded-full hover:bg-black/90 transition-all z-10 disabled:opacity-30 disabled:cursor-not-allowed"
+                              className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white p-2 md:p-4 rounded-full hover:bg-black/90 transition-all z-20 disabled:opacity-30 disabled:cursor-not-allowed shadow-lg"
                             >
                               <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
                             </button>
                             <button
                               onClick={nextMedia}
                               disabled={selectedMediaIndex === selectedProject.medias.length - 1}
-                              className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white p-2 md:p-4 rounded-full hover:bg-black/90 transition-all z-10 disabled:opacity-30 disabled:cursor-not-allowed"
+                              className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white p-2 md:p-4 rounded-full hover:bg-black/90 transition-all z-20 disabled:opacity-30 disabled:cursor-not-allowed shadow-lg"
                             >
                               <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
                             </button>
@@ -442,14 +462,14 @@ const Portfolio = () => {
                         )}
 
                         {/* Compteur de médias */}
-                        <div className="absolute bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-montserrat z-10">
+                        <div className="absolute bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-montserrat z-20 shadow-lg">
                           {selectedMediaIndex + 1} / {selectedProject.medias.length}
                         </div>
                       </>
                     )}
                   </div>
 
-                  {/* Sidebar des miniatures - RESPONSIVE */}
+                  {/* Sidebar des miniatures */}
                   {selectedProject.medias && selectedProject.medias.length > 1 && (
                     <div className="w-full md:w-80 h-48 md:h-auto bg-gray-900 border-t md:border-t-0 md:border-l border-gray-700 flex flex-col">
                       <div className="p-3 md:p-4 border-b border-gray-700 flex-shrink-0">
@@ -475,8 +495,10 @@ const Portfolio = () => {
                                   src={media.thumbnail}
                                   alt={media.title}
                                   className="w-full h-full object-cover"
+                                  loading="lazy"
                                   onError={(e) => {
                                     const target = e.target as HTMLImageElement;
+                                    console.error('❌ Erreur thumbnail sidebar:', media.thumbnail);
                                     if (media.type === 'image') {
                                       target.src = media.src;
                                     } else {

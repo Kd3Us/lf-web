@@ -1,4 +1,4 @@
-// src/services/googleDriveService.ts - AVEC CORRECTION THUMBNAILS VIDÉO
+// src/services/googleDriveService.ts - VERSION FINALE SANS CORS
 const API_KEY = import.meta.env.VITE_GOOGLE_DRIVE_API_KEY;
 const FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID;
 
@@ -66,7 +66,6 @@ class GoogleDriveService {
   
   async getFilesInProject(projectFolderId: string): Promise<DriveFile[]> {
     try {
-      // Ajout du paramètre fields pour récupérer plus de métadonnées
       const url = `${this.baseUrl}/files?q='${projectFolderId}'+in+parents&fields=files(id,name,mimeType,webViewLink,webContentLink)&key=${API_KEY}`;
       
       const response = await fetch(url);
@@ -82,7 +81,6 @@ class GoogleDriveService {
     }
   }
   
-  // Fonction améliorée pour détecter si un fichier est une vidéo
   private isVideoFile(file: DriveFile): boolean {
     const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v', '.wmv', '.flv'];
     const videoMimeTypes = ['video/', 'application/mxf'];
@@ -98,7 +96,6 @@ class GoogleDriveService {
     return nameCheck || mimeCheck;
   }
   
-  // Fonction améliorée pour détecter si un fichier est une image
   private isImageFile(file: DriveFile): boolean {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
     const imageMimeTypes = ['image/'];
@@ -114,8 +111,15 @@ class GoogleDriveService {
     return nameCheck || mimeCheck;
   }
   
+  // ✅ MÉTHODE CORRIGÉE : Utilise l'API Google Drive directement pour éviter CORS
   getPreviewUrl(fileId: string): string {
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h300`;
+    // Utiliser l'API Google Drive thumbnail avec la clé API
+    return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`;
+  }
+  
+  // Alternative : thumbnail via uc?export=view (plus compatible)
+  getThumbnailUrl(fileId: string): string {
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
   }
   
   getVideoStreamUrl(fileId: string): string {
@@ -123,7 +127,7 @@ class GoogleDriveService {
   }
   
   getImageDirectUrl(fileId: string): string {
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200-h900`;
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
   }
   
   async buildPortfolioData(): Promise<Record<string, PortfolioProject[]>> {
@@ -159,32 +163,34 @@ class GoogleDriveService {
           
           const medias: MediaFile[] = [];
           
-          // ✅ CORRECTION : Thumbnails spécifiques pour vidéos
+          // Ajouter la vidéo principale
           if (mainVideo) {
             medias.push({
               type: 'video',
               src: this.getVideoStreamUrl(mainVideo.id),
-              thumbnail: this.getPreviewUrl(mainVideo.id), // ← Première frame de la vidéo
+              thumbnail: this.getThumbnailUrl(mainVideo.id),
               title: mainVideo.name,
               fileId: mainVideo.id
             });
           }
           
+          // Ajouter les autres vidéos
           allVideos.filter(v => v.id !== mainVideo?.id).forEach(video => {
             medias.push({
               type: 'video',
               src: this.getVideoStreamUrl(video.id),
-              thumbnail: this.getPreviewUrl(video.id), // ← Première frame de la vidéo
+              thumbnail: this.getThumbnailUrl(video.id),
               title: video.name,
               fileId: video.id
             });
           });
           
+          // Ajouter les images
           allImages.forEach(image => {
             medias.push({
               type: 'image',
               src: this.getImageDirectUrl(image.id),
-              thumbnail: this.getPreviewUrl(image.id),
+              thumbnail: this.getThumbnailUrl(image.id),
               title: image.name,
               fileId: image.id
             });
@@ -194,7 +200,7 @@ class GoogleDriveService {
             const projectData: PortfolioProject = {
               title: project.name,
               description: `Projet ${category.name}`,
-              thumbnail: this.getPreviewUrl(mainThumbnail.id),
+              thumbnail: this.getThumbnailUrl(mainThumbnail.id),
               video: mainVideo ? this.getVideoStreamUrl(mainVideo.id) : '',
               folderId: project.id,
               medias: medias
