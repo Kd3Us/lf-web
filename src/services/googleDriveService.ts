@@ -1,4 +1,3 @@
-// src/services/googleDriveService.ts - VERSION FINALE SANS CORS
 const API_KEY = import.meta.env.VITE_GOOGLE_DRIVE_API_KEY;
 const FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID;
 
@@ -13,6 +12,7 @@ interface DriveFile {
 interface MediaFile {
   type: 'video' | 'image';
   src: string;
+  directUrl?: string;
   thumbnail: string;
   title: string;
   fileId: string;
@@ -111,14 +111,18 @@ class GoogleDriveService {
     return nameCheck || mimeCheck;
   }
   
-  // ✅ MÉTHODE CORRIGÉE : Utilise l'API Google Drive directement pour éviter CORS
-  getPreviewUrl(fileId: string): string {
-    // Utiliser l'API Google Drive thumbnail avec la clé API
+  getThumbnailUrl(fileId: string, isVideo: boolean = false): string {
+    if (isVideo) {
+      return '';
+    }
     return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`;
   }
   
-  // Alternative : thumbnail via uc?export=view (plus compatible)
-  getThumbnailUrl(fileId: string): string {
+  getImageDirectUrl(fileId: string): string {
+    return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`;
+  }
+  
+  getImageAlternativeUrl(fileId: string): string {
     return `https://drive.google.com/uc?export=view&id=${fileId}`;
   }
   
@@ -126,8 +130,8 @@ class GoogleDriveService {
     return `https://drive.google.com/file/d/${fileId}/preview`;
   }
   
-  getImageDirectUrl(fileId: string): string {
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  getVideoDirectUrl(fileId: string): string {
+    return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`;
   }
   
   async buildPortfolioData(): Promise<Record<string, PortfolioProject[]>> {
@@ -163,34 +167,47 @@ class GoogleDriveService {
           
           const medias: MediaFile[] = [];
           
-          // Ajouter la vidéo principale
           if (mainVideo) {
+            const videoThumb = files.find(f => {
+              const videoName = mainVideo.name.replace(/\.[^/.]+$/, '');
+              return f.name.toLowerCase().includes(videoName.toLowerCase()) && 
+                     f.name.toLowerCase().includes('thumb') &&
+                     this.isImageFile(f);
+            });
+            
             medias.push({
               type: 'video',
               src: this.getVideoStreamUrl(mainVideo.id),
-              thumbnail: this.getThumbnailUrl(mainVideo.id),
+              directUrl: this.getVideoDirectUrl(mainVideo.id),
+              thumbnail: videoThumb ? this.getThumbnailUrl(videoThumb.id, false) : '',
               title: mainVideo.name,
               fileId: mainVideo.id
             });
           }
           
-          // Ajouter les autres vidéos
           allVideos.filter(v => v.id !== mainVideo?.id).forEach(video => {
+            const videoThumb = files.find(f => {
+              const videoName = video.name.replace(/\.[^/.]+$/, '');
+              return f.name.toLowerCase().includes(videoName.toLowerCase()) && 
+                     f.name.toLowerCase().includes('thumb') &&
+                     this.isImageFile(f);
+            });
+            
             medias.push({
               type: 'video',
               src: this.getVideoStreamUrl(video.id),
-              thumbnail: this.getThumbnailUrl(video.id),
+              directUrl: this.getVideoDirectUrl(video.id),
+              thumbnail: videoThumb ? this.getThumbnailUrl(videoThumb.id, false) : '',
               title: video.name,
               fileId: video.id
             });
           });
           
-          // Ajouter les images
           allImages.forEach(image => {
             medias.push({
               type: 'image',
               src: this.getImageDirectUrl(image.id),
-              thumbnail: this.getThumbnailUrl(image.id),
+              thumbnail: this.getThumbnailUrl(image.id, false),
               title: image.name,
               fileId: image.id
             });

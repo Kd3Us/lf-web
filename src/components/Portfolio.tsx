@@ -1,9 +1,107 @@
 import { Card } from "@/components/ui/card";
 import { Play, Video, Calendar, Film, Music, X, ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, AlertCircle, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { usePortfolioData } from "@/hooks/usePortfolioData";
+
+const VideoThumbnail = ({ directUrl, fileId, title, onThumbnailExtracted }: { 
+  directUrl: string; 
+  fileId: string; 
+  title: string;
+  onThumbnailExtracted?: (fileId: string, thumbnailUrl: string) => void;
+}) => {
+  const [thumbnail, setThumbnail] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const extractThumbnail = async () => {
+      try {
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.src = directUrl;
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        
+        const loadPromise = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Timeout')), 10000);
+          
+          video.addEventListener('loadedmetadata', () => {
+            clearTimeout(timeout);
+            video.currentTime = Math.min(1, video.duration / 10);
+          });
+          
+          video.addEventListener('seeked', () => {
+            clearTimeout(timeout);
+            resolve(true);
+          }, { once: true });
+          
+          video.addEventListener('error', (e) => {
+            clearTimeout(timeout);
+            reject(new Error('Video load error'));
+          });
+        });
+
+        await loadPromise;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setThumbnail(thumbnailUrl);
+          setLoading(false);
+          
+          if (onThumbnailExtracted) {
+            onThumbnailExtracted(fileId, thumbnailUrl);
+          }
+        }
+        
+        video.remove();
+      } catch (error) {
+        console.error('Impossible d\'extraire le thumbnail vidéo:', error);
+        setFailed(true);
+        setLoading(false);
+      }
+    };
+
+    extractThumbnail();
+  }, [directUrl, fileId]);
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900">
+        <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-2" />
+        <span className="text-[10px] text-gray-400">Chargement...</span>
+      </div>
+    );
+  }
+
+  if (failed || !thumbnail) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900">
+        <Play className="w-8 h-8 md:w-10 md:h-10 text-blue-400 mb-2" fill="currentColor" />
+        <span className="text-[10px] md:text-xs text-gray-300 px-2 text-center line-clamp-2 max-w-full">
+          {title.replace(/\.[^/.]+$/, "")}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={thumbnail}
+      alt={title}
+      className="w-full h-full object-cover"
+      loading="lazy"
+    />
+  );
+};
 
 const Portfolio = () => {
   const [selectedProject, setSelectedProject] = useState<any>(null);
@@ -404,38 +502,45 @@ const Portfolio = () => {
                 </div>
 
                 <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                  {/* Zone média principale - CORRECTION RESPONSIVE */}
-                  <div className="flex-1 relative bg-black min-h-0 overflow-hidden">
+                  {/* Zone média principale - CORRIGÉ */}
+                  <div className="flex-1 relative bg-black flex items-center justify-center" style={{ minHeight: '400px' }}>
                     {selectedProject.medias && selectedProject.medias[selectedMediaIndex] && (
                       <>
                         {selectedProject.medias[selectedMediaIndex].type === 'video' ? (
-                          <div className="absolute inset-0 flex items-center justify-center p-2 md:p-4">
-                            <iframe
-                              src={getEmbedUrl(selectedProject.medias[selectedMediaIndex].src)}
-                              className="w-full h-full"
-                              style={{ 
-                                border: 'none',
-                                maxWidth: '100%',
-                                maxHeight: '100%'
-                              }}
-                              allow="autoplay; fullscreen"
-                              title={selectedProject.medias[selectedMediaIndex].title}
-                            />
+                          <div className="w-full h-full flex items-center justify-center p-4">
+                            <div style={{ width: '100%', maxWidth: '1200px', aspectRatio: '16/9' }}>
+                              <iframe
+                                src={getEmbedUrl(selectedProject.medias[selectedMediaIndex].src)}
+                                style={{ 
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none'
+                                }}
+                                allow="autoplay; fullscreen"
+                                title={selectedProject.medias[selectedMediaIndex].title}
+                              />
+                            </div>
                           </div>
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center p-2 md:p-4">
+                          <div className="w-full h-full flex items-center justify-center p-4 bg-black">
                             <img
                               src={selectedProject.medias[selectedMediaIndex].src}
                               alt={selectedProject.medias[selectedMediaIndex].title}
                               className="max-w-full max-h-full w-auto h-auto object-contain"
                               style={{
-                                maxWidth: '100%',
-                                maxHeight: '100%'
+                                maxHeight: 'calc(95vh - 200px)'
                               }}
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 console.error('❌ Erreur image modal:', selectedProject.medias[selectedMediaIndex].src);
-                                target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==";
+                                
+                                if (!target.dataset.fallbackAttempted) {
+                                  target.dataset.fallbackAttempted = 'true';
+                                  const fileId = selectedProject.medias[selectedMediaIndex].fileId;
+                                  target.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                                } else {
+                                  target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==";
+                                }
                               }}
                             />
                           </div>
@@ -469,7 +574,7 @@ const Portfolio = () => {
                     )}
                   </div>
 
-                  {/* Sidebar des miniatures */}
+                  {/* Sidebar des miniatures - CORRIGÉ */}
                   {selectedProject.medias && selectedProject.medias.length > 1 && (
                     <div className="w-full md:w-80 h-48 md:h-auto bg-gray-900 border-t md:border-t-0 md:border-l border-gray-700 flex flex-col">
                       <div className="p-3 md:p-4 border-b border-gray-700 flex-shrink-0">
@@ -490,22 +595,35 @@ const Portfolio = () => {
                                   : 'hover:ring-1 hover:ring-gray-400'
                               }`}
                             >
-                              <div className="aspect-video relative">
-                                <img
-                                  src={media.thumbnail}
-                                  alt={media.title}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    console.error('❌ Erreur thumbnail sidebar:', media.thumbnail);
-                                    if (media.type === 'image') {
-                                      target.src = media.src;
-                                    } else {
-                                      target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1lZGlhPC90ZXh0Pjwvc3ZnPg==";
-                                    }
-                                  }}
-                                />
+                              <div className="aspect-video relative bg-gray-800">
+                                {media.type === 'video' ? (
+                                  <VideoThumbnail 
+                                    directUrl={media.directUrl || media.src}
+                                    fileId={media.fileId}
+                                    title={media.title}
+                                  />
+                                ) : (
+                                  <img
+                                    src={media.thumbnail || media.src}
+                                    alt={media.title}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      console.error('❌ Erreur thumbnail sidebar:', media.thumbnail);
+                                      
+                                      if (!target.dataset.retried) {
+                                        target.dataset.retried = 'true';
+                                        target.src = media.src;
+                                      } else if (!target.dataset.fallbackAttempted) {
+                                        target.dataset.fallbackAttempted = 'true';
+                                        target.src = `https://drive.google.com/uc?export=view&id=${media.fileId}`;
+                                      } else {
+                                        target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg==";
+                                      }
+                                    }}
+                                  />
+                                )}
                                 
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
                                   <div className="absolute top-1 md:top-2 right-1 md:right-2">
@@ -541,7 +659,7 @@ const Portfolio = () => {
       </div>
 
       {/* CSS personnalisé */}
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
