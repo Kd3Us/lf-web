@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+Palette client:
+- Gris foncé: #54504B (HSL: 30 6% 32%)
+- Noir: #000000 (HSL: 0 0% 0%)
+- Blanc: #FFFFFF (HSL: 0 0% 100%)
+- Transition noir vers blanc: gradient
+*/
+
+@layer base {
+  :root {
+    /* Couleurs principales basées sur la palette client */
+    --background: 0 0% 100%; /* Blanc #FFFFFF */
+    --foreground: 0 0% 0%; /* Noir #000000 */
+
+    --card: 0 0% 100%; /* Blanc */
+    --card-foreground: 0 0% 0%; /* Noir */
+
+    --popover: 0 0% 100%; /* Blanc */
+    --popover-foreground: 0 0% 0%; /* Noir */
+
+    --primary: 0 0% 0%; /* Noir #000000 */
+    --primary-foreground: 0 0% 100%; /* Blanc */
+
+    --secondary: 30 6% 32%; /* Gris foncé #54504B */
+    --secondary-foreground: 0 0% 100%; /* Blanc */
+
+    --muted: 0 0% 96%; /* Gris très clair pour contraste */
+    --muted-foreground: 30 6% 32%; /* Gris foncé #54504B */
+
+    --accent: 30 6% 32%; /* Gris foncé #54504B */
+    --accent-foreground: 0 0% 100%; /* Blanc */
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 6% 90%; /* Gris très clair basé sur la palette */
+    --input: 30 6% 90%;
+    --ring: 0 0% 0%; /* Noir pour focus */
+
+    --radius: 0.25rem;
+    
+    /* Gradients personnalisés avec la palette client */
+    --gradient-dark: linear-gradient(135deg, hsl(0 0% 0%), hsl(30 6% 32%)); /* Noir vers gris foncé */
+    --gradient-light: linear-gradient(135deg, hsl(0 0% 96%), hsl(0 0% 100%)); /* Gris clair vers blanc */
+    --gradient-transition: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 0% 100%)); /* Noir vers blanc */
+    --shadow-cinematic: 0 20px 60px -15px hsl(0 0% 0% / 0.5);
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Sidebar avec la nouvelle palette */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 30 6% 32%;
+    --sidebar-primary: 0 0% 0%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 30 6% 90%;
+    --sidebar-ring: 0 0% 0%;
+  }
+
+  .dark {
+    /* Mode sombre avec inversion de la palette */
+    --background: 0 0% 0%; /* Noir #000000 */
+    --foreground: 0 0% 100%; /* Blanc #FFFFFF */
+
+    --card: 30 6% 32%; /* Gris foncé #54504B */
+    --card-foreground: 0 0% 100%; /* Blanc */
+
+    --popover: 30 6% 32%; /* Gris foncé */
+    --popover-foreground: 0 0% 100%; /* Blanc */
+
+    --primary: 0 0% 100%; /* Blanc */
+    --primary-foreground: 0 0% 0%; /* Noir */
+
+    --secondary: 30 6% 32%; /* Gris foncé #54504B */
+    --secondary-foreground: 0 0% 100%; /* Blanc */
+
+    --muted: 30 6% 20%; /* Version plus sombre du gris */
+    --muted-foreground: 0 0% 90%; /* Blanc cassé */
+
+    --accent: 0 0% 100%; /* Blanc en accent pour le mode sombre */
+    --accent-foreground: 0 0% 0%; /* Noir */
+
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 6% 32%; /* Gris foncé pour les bordures */
+    --input: 30 6% 32%;
+    --ring: 0 0% 100%; /* Blanc pour focus en mode sombre */
+
+    /* Sidebar mode sombre */
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 30 6% 32%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 30 6% 32%;
+    --sidebar-ring: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Classes utilitaires personnalisées pour la palette client */
+@layer components {
+  .bg-client-dark {
+    background-color: hsl(30 6% 32%); /* #54504B */
+  }
+  
+  .bg-client-black {
+    background-color: hsl(0 0% 0%); /* #000000 */
+  }
+  
+  .bg-client-white {
+    background-color: hsl(0 0% 100%); /* #FFFFFF */
+  }
+  
+  .text-client-dark {
+    color: hsl(30 6% 32%); /* #54504B */
+  }
+  
+  .text-client-black {
+    color: hsl(0 0% 0%); /* #000000 */
+  }
+  
+  .text-client-white {
+    color: hsl(0 0% 100%); /* #FFFFFF */
+  }
+  
+  .gradient-client-transition {
+    background: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 0% 100%));
+  }
+  
+  .gradient-client-dark {
+    background: linear-gradient(135deg, hsl(0 0% 0%), hsl(30 6% 32%));
+  }
+}
